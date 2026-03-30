@@ -30,6 +30,7 @@ class CsvTransactionRepository extends IRepository {
 
   #escapeCsv(value) {
     const stringValue = String(value ?? "");
+
     if (
       stringValue.includes(",") ||
       stringValue.includes('"') ||
@@ -37,6 +38,7 @@ class CsvTransactionRepository extends IRepository {
     ) {
       return `"${stringValue.replace(/"/g, '""')}"`;
     }
+
     return stringValue;
   }
 
@@ -45,13 +47,13 @@ class CsvTransactionRepository extends IRepository {
     let current = "";
     let inQuotes = false;
 
-    for (let i = 0; i < line.length; i++) {
+    for (let i = 0; i < line.length; i += 1) {
       const char = line[i];
       const next = line[i + 1];
 
       if (char === '"' && inQuotes && next === '"') {
         current += '"';
-        i++;
+        i += 1;
         continue;
       }
 
@@ -75,7 +77,6 @@ class CsvTransactionRepository extends IRepository {
 
   async getAll() {
     await this.#ensureFile();
-
     const raw = await fs.readFile(this.#filePath, "utf8");
     const lines = raw.split(/\r?\n/).filter(Boolean);
 
@@ -115,19 +116,50 @@ class CsvTransactionRepository extends IRepository {
 
     items.push(transaction);
     this.#items = items;
-
     await this.save();
+
     return transaction;
+  }
+
+  async update(id, updatedFields) {
+    const items = await this.getAll();
+    const index = items.findIndex((item) => String(item.id) === String(id));
+
+    if (index === -1) {
+      return null;
+    }
+
+    const current = items[index].toJSON();
+    items[index] = new Transaction({
+      ...current,
+      ...updatedFields,
+      id: current.id,
+    });
+
+    this.#items = items;
+    await this.save();
+    return items[index];
+  }
+
+  async delete(id) {
+    const items = await this.getAll();
+    const filtered = items.filter((item) => String(item.id) !== String(id));
+
+    if (filtered.length === items.length) {
+      return false;
+    }
+
+    this.#items = filtered;
+    await this.save();
+    return true;
   }
 
   async save() {
     await this.#ensureFile();
 
     const header = "id,type,amount,description,category,tx_date,created_by";
-
     const lines = this.#items.map((item) => {
       const row = item.toJSON();
-
       return [
         this.#escapeCsv(row.id),
         this.#escapeCsv(row.type),

@@ -1,0 +1,6 @@
+id,item_code,name,category,unit,current_qty,min_qty,unit_cost,supplier,location,is_active,created_at
+1,SC-FLT-001,Oil Filter,Engine,pcs,14,5,18.5,Scania Parts,Shelf A1,true,2026-03-24T08:00:00.000Z
+2,SC-BRK-010,Brake Pads Set,Brakes,set,7,4,95,TruckParts KS,Shelf B2,true,2026-03-24T08:10:00.000Z
+3,SC-ENG-021,Coolant 5L,Fluids,pcs,11,6,22,AutoFluid,Shelf C1,true,2026-03-24T08:20:00.000Z
+4,SC-ELC-007,Headlight Bulb,Electrical,pcs,3,5,12.75,ElectroTruck,Shelf D4,true,2026-03-24T08:30:00.000Z
+5,SC-TYR-099,Wheel Nut,Wheels,pcs,40,12,3.2,Fasteners Pro,Bin E3,true,2026-03-24T08:40:00.000Z
