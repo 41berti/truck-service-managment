@@ -5,77 +5,69 @@
 - Backend: Node.js + Express
 - Database: PostgreSQL
 - API style: REST
+- File storage demo: CSV
 
 ## Layers
 
 ### 1. UI Layer
-Location:
+**Location**
 - `frontend/src/UI`
+- `backend/src/UI/stockConsoleUI.js` (console demo for the assignment)
 
-Responsibility:
+**Responsibility**
 - Presents data to the user
-- Handles forms, pages, tables, buttons, and role-based screens
-
-Reason:
-- Keeps visual logic separate from backend business logic
+- Reads input from the menu/form
+- Calls the service layer
+- Shows output/errors in a user-friendly way
 
 ### 2. Routes Layer
-Location:
+**Location**
 - `backend/src/routes`
 
-Responsibility:
+**Responsibility**
 - Receives HTTP requests
 - Validates request shape at a basic level
 - Calls services
 - Returns HTTP responses
 
-Reason:
-- Keeps route files focused on API behavior
-
 ### 3. Services Layer
-Location:
+**Location**
 - `backend/src/Services`
 
-Responsibility:
+**Responsibility**
 - Contains business logic
-- Handles login rules, transaction validation, and summaries
-
-Reason:
-- Prevents large route files and keeps logic reusable
+- Handles login rules and transaction logic
+- Validates stock input before writing to the CSV repository
+- Implements filtering, low-stock detection, statistics, and CRUD rules
 
 ### 4. Models Layer
-Location:
+**Location**
 - `backend/src/Models`
 
-Responsibility:
-- Represents domain entities such as User, Transaction, and Attendance
-
-Reason:
-- Makes the code easier to understand and document
+**Responsibility**
+- Represents domain entities such as `User`, `Transaction`, `Attendance`, and `StockItem`
+- Encapsulates data and serialization with `toJSON()`
 
 ### 5. Data Layer
-Location:
+**Location**
 - `backend/src/Data`
 
-Responsibility:
-- Contains repository abstractions and CSV repository implementation
-
-Reason:
-- Separates persistence concerns from business logic
+**Responsibility**
+- Contains repository abstractions and CSV repository implementations
+- Reads/writes data from files
+- Keeps persistence concerns separate from UI and service logic
 
 ## Repository Pattern
 
 The project includes:
 - `IRepository`
 - `CsvTransactionRepository`
+- `CsvStockItemRepository`
 
-Purpose:
+**Purpose**
 - demonstrate the Repository Pattern required by the assignment
 - show that storage logic can be abstracted behind a common contract
-
-Important note:
-- PostgreSQL remains the real database for the running application
-- the CSV repository is included as an architecture/demo implementation
+- prove dependency injection through `StockItemService(repository)`
 
 ## Main Design Decisions
 
@@ -83,10 +75,13 @@ Important note:
 It works like the application bootstrap file and only starts the server.
 
 ### Why services were introduced
-Authentication and transactions already had enough logic to justify a Services layer.
+Authentication, transactions, and stock management already have enough logic to justify a Services layer.
 
 ### Why PostgreSQL is still the main data source
-Because the real application already uses a relational database structure.
+Because the real application already uses a relational database structure for the full workshop system. The existing schema already includes a dedicated `stock_items` table with domain fields needed for inventory handling.
 
-### Why the CSV repository exists
-Because the assignment explicitly requires a file-based repository that reads/writes CSV.
+### Why a CSV repository still exists
+Because the assignment explicitly requires a file-based repository with real CRUD.
+
+### Why `StockItem` was selected as the main CRUD model
+The existing database schema already includes a `stock_items` table with attributes like `name`, `current_qty`, `min_qty`, and `unit_cost`, so this model fits both the project domain and the assignment rules.
