@@ -129,6 +129,19 @@ async function fshiArtikull() {
   console.log(`\n${result.message}\n`);
 }
 
+async function shfaqLowStock() {
+  const items = await service.listo({ onlyLowStock: true });
+  console.log("\nArtikujt me stok të ulët:");
+  showItems(items);
+}
+
+async function shfaqStatistikat() {
+  const summary = await service.statistika();
+
+  console.log("\nStatistikat e stokut:");
+  console.table([summary]);
+}
+
 async function main() {
   console.log("\n=== STOCK CRUD CONSOLE UI ===");
   console.log("Rrjedha: UI -> Service -> Repository -> CSV file\n");
@@ -141,6 +154,8 @@ async function main() {
     console.log("3. Shto artikull");
     console.log("4. Përditëso artikull");
     console.log("5. Fshi artikull");
+    console.log("6. Shfaq artikujt me stok të ulët");
+    console.log("7. Shfaq statistikat");
     console.log("0. Dil");
 
     const choice = await ask("\nZgjedhja jote: ");
@@ -161,6 +176,12 @@ async function main() {
           break;
         case "5":
           await fshiArtikull();
+          break;
+        case "6":
+          await shfaqLowStock();
+          break;
+        case "7":
+          await shfaqStatistikat();
           break;
         case "0":
           running = false;

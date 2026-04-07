@@ -31,12 +31,11 @@ Data: 1 Prill 2026
 ## Plani i Sprintit
 
 ### Feature e Re (çka do të ndërtoj)
-- Do të ndërtoj një frontend web bazik për modulin e stokut me kërkim/filtrim sipas emrit, kategorisë dhe gjendjes low stock.
-- Useri do të mund të bëjë login, të hapë ekranin e stokut, të shkruajë tekst kërkimi ose të zgjedhë filtra, dhe të shohë rezultatet në një tabelë web.
-- Për ta mbështetur këtë UI, do të shtoj route të reja në backend për stokun, p.sh. `GET /stock` dhe `GET /stock/:id`.
-- Rrjedha do të jetë e qartë: `Frontend UI -> Express Route -> StockItemService -> CsvStockItemRepository`.
-- Kjo është feature konkrete dhe reale për sprintin, sepse logjika bazë në service/repository ekziston tashmë, por mungon API-ja dhe frontend-i që useri ta përdorë jashtë console-s.
-- Si pjesë e sprintit do të përpunohet edhe frontend-i, sepse UI aktuale është vetëm console-based dhe shumë e thjeshtë.
+- Do të ndërtoj API për modulin e stokut me kërkim/filtrim sipas emrit dhe kategorisë, me sortim dhe low-stock alert.
+- Administratori do të mund të kërkojë artikujt e stokut përmes endpoint-eve si `GET /stock`, `GET /stock/:id`, `GET /stock/low-stock` dhe `GET /stock/summary`.
+- Rrjedha do të jetë e qartë: `Route -> StockItemService -> CsvStockItemRepository`.
+- Kjo është feature konkrete dhe reale për sprintin, sepse logjika bazë në service/repository ekziston tashmë, por mungojnë endpoint-et e pastra për përdorim dhe vlerësim.
+- Frontend-i web mbetet si punë e ardhshme, por Sprint 2 do ta forcojë pjesën e stokut në backend me funksionalitet të plotë dhe të testueshëm.
 
 ### Error Handling (çka do të shtoj)
 - Rasti 1: nëse mungon file-i `stock-items.csv` ose nuk hapet, repository nuk duhet ta rrëzojë programin; do të kthehet mesazh i qartë si `File nuk u gjet, po krijoj file të ri...`.
@@ -50,6 +49,7 @@ Data: 1 Prill 2026
 - `StockItemService.listo()`
 - `StockItemService.gjejSipasId()`
 - `StockItemService.shto()`
+- `StockItemService.statistika()`
 
 #### Cilat raste kufitare do t'i kontrolloj?
 - kërkim për artikull ekzistues kthen rezultat

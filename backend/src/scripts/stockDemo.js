@@ -37,6 +37,12 @@ async function runDemo() {
   const filtered = await service.listo({ category: "engine" });
   console.log("Filtrim sipas kategorisë 'engine':", filtered.length, "artikuj");
 
+  const lowStockItems = await service.listo({ onlyLowStock: true });
+  console.log("Artikuj low stock:", lowStockItems.length);
+
+  const summary = await service.statistika();
+  console.log("Statistikat:", summary);
+
   const deleted = await service.fshi(created.id);
   console.log(deleted.message);
 

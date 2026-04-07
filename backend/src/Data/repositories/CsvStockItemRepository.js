@@ -17,12 +17,19 @@ class CsvStockItemRepository extends IRepository {
   }
 
   async #ensureFile() {
-    await fs.mkdir(path.dirname(this.#filePath), { recursive: true });
-
     try {
-      await fs.access(this.#filePath);
-    } catch {
-      await fs.writeFile(this.#filePath, this.#buildSeedFile(), "utf8");
+      await fs.mkdir(path.dirname(this.#filePath), { recursive: true });
+
+      try {
+        await fs.access(this.#filePath);
+      } catch {
+        await fs.writeFile(this.#filePath, this.#buildSeedFile(), "utf8");
+      }
+    } catch (error) {
+      throw this.#createRepositoryError(
+        "Nuk u arrit përgatitja e file-it të stokut.",
+        error
+      );
     }
   }
 
@@ -225,21 +232,32 @@ class CsvStockItemRepository extends IRepository {
   }
 
   async getAll() {
-    await this.#ensureFile();
-    const raw = await fs.readFile(this.#filePath, "utf8");
-    const lines = raw.split(/\r?\n/).filter((line) => line.trim() !== "");
+    try {
+      await this.#ensureFile();
+      const raw = await fs.readFile(this.#filePath, "utf8");
+      const lines = raw.split(/\r?\n/).filter((line) => line.trim() !== "");
 
-    if (lines.length <= 1) {
-      this.#items = [];
-      return [];
+      if (lines.length <= 1) {
+        this.#items = [];
+        return [];
+      }
+
+      this.#items = lines
+        .slice(1)
+        .map((line) => this.#toStockItem(line))
+        .filter((item) => item !== null);
+
+      return [...this.#items].sort((a, b) => a.id - b.id);
+    } catch (error) {
+      if (error?.statusCode) {
+        throw error;
+      }
+
+      throw this.#createRepositoryError(
+        "Nuk u arrit leximi i të dhënave të stokut.",
+        error
+      );
     }
-
-    this.#items = lines
-      .slice(1)
-      .map((line) => this.#toStockItem(line))
-      .filter((item) => item !== null);
-
-    return [...this.#items].sort((a, b) => a.id - b.id);
   }
 
   #getNextId(items) {
@@ -335,15 +353,35 @@ class CsvStockItemRepository extends IRepository {
   }
 
   async save() {
-    await this.#ensureFile();
+    try {
+      await this.#ensureFile();
 
-    const lines = this.#items
-      .filter((item) => Number.isInteger(Number(item.id)) && Number(item.id) > 0)
-      .sort((a, b) => a.id - b.id)
-      .map((item) => this.#itemToCsvRow(item));
+      const lines = this.#items
+        .filter(
+          (item) => Number.isInteger(Number(item.id)) && Number(item.id) > 0
+        )
+        .sort((a, b) => a.id - b.id)
+        .map((item) => this.#itemToCsvRow(item));
 
-    const content = [this.#header, ...lines].join("\n") + "\n";
-    await fs.writeFile(this.#filePath, content, "utf8");
+      const content = [this.#header, ...lines].join("\n") + "\n";
+      await fs.writeFile(this.#filePath, content, "utf8");
+    } catch (error) {
+      if (error?.statusCode) {
+        throw error;
+      }
+
+      throw this.#createRepositoryError(
+        "Nuk u arrit ruajtja e të dhënave të stokut.",
+        error
+      );
+    }
+  }
+
+  #createRepositoryError(message, cause) {
+    const error = new Error(message);
+    error.statusCode = 500;
+    error.cause = cause;
+    return error;
   }
 }
 
