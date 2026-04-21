@@ -3,14 +3,26 @@ const authenticateToken = require("../middlewares/authenticateToken");
 const authorizeRoles = require("../middlewares/authorizeRoles");
 const CsvStockItemRepository = require("../Data/repositories/CsvStockItemRepository");
 const StockItemService = require("../Services/StockItemService");
+const asyncHandler = require("../utils/asyncHandler");
 
 const router = express.Router();
 const stockService = new StockItemService(new CsvStockItemRepository());
 
 router.use(authenticateToken, authorizeRoles("ADMIN"));
 
-router.get("/summary", async (req, res) => {
-  try {
+const updateStockItem = asyncHandler(async (req, res) => {
+  const item = await stockService.perditeso(req.params.id, req.body);
+
+  return res.status(200).json({
+    ok: true,
+    message: "Artikulli u përditësua me sukses.",
+    item,
+  });
+});
+
+router.get(
+  "/summary",
+  asyncHandler(async (req, res) => {
     const summary = await stockService.statistika(req.query);
 
     return res.status(200).json({
@@ -18,18 +30,12 @@ router.get("/summary", async (req, res) => {
       message: "Përmbledhja e stokut u llogarit me sukses.",
       summary,
     });
-  } catch (error) {
-    console.error("Stock summary error:", error.message);
+  })
+);
 
-    return res.status(error.statusCode || 500).json({
-      ok: false,
-      message: error.message || "Nuk u arrit llogaritja e përmbledhjes së stokut.",
-    });
-  }
-});
-
-router.get("/low-stock", async (req, res) => {
-  try {
+router.get(
+  "/low-stock",
+  asyncHandler(async (req, res) => {
     const items = await stockService.listo({
       ...req.query,
       onlyLowStock: true,
@@ -44,18 +50,12 @@ router.get("/low-stock", async (req, res) => {
       count: items.length,
       items,
     });
-  } catch (error) {
-    console.error("Low stock list error:", error.message);
+  })
+);
 
-    return res.status(error.statusCode || 500).json({
-      ok: false,
-      message: error.message || "Nuk u arrit leximi i artikujve me stok të ulët.",
-    });
-  }
-});
-
-router.get("/", async (req, res) => {
-  try {
+router.get(
+  "/",
+  asyncHandler(async (req, res) => {
     const items = await stockService.listo(req.query);
 
     return res.status(200).json({
@@ -75,18 +75,25 @@ router.get("/", async (req, res) => {
       },
       items,
     });
-  } catch (error) {
-    console.error("Stock list error:", error.message);
+  })
+);
 
-    return res.status(error.statusCode || 500).json({
-      ok: false,
-      message: error.message || "Nuk u arrit leximi i artikujve të stokut.",
+router.post(
+  "/",
+  asyncHandler(async (req, res) => {
+    const item = await stockService.shto(req.body);
+
+    return res.status(201).json({
+      ok: true,
+      message: "Artikulli u shtua me sukses.",
+      item,
     });
-  }
-});
+  })
+);
 
-router.get("/:id", async (req, res) => {
-  try {
+router.get(
+  "/:id",
+  asyncHandler(async (req, res) => {
     const item = await stockService.gjejSipasId(req.params.id);
 
     return res.status(200).json({
@@ -94,14 +101,18 @@ router.get("/:id", async (req, res) => {
       message: "Artikulli u gjet me sukses.",
       item,
     });
-  } catch (error) {
-    console.error("Stock item error:", error.message);
+  })
+);
 
-    return res.status(error.statusCode || 500).json({
-      ok: false,
-      message: error.message || "Nuk u arrit leximi i artikullit.",
-    });
-  }
-});
+router.put("/:id", updateStockItem);
+router.patch("/:id", updateStockItem);
+
+router.delete(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    const result = await stockService.fshi(req.params.id);
+    return res.status(200).json(result);
+  })
+);
 
 module.exports = router;

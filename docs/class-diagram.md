@@ -8,11 +8,6 @@ classDiagram
         -email : string
         -role : string
         -isActive : boolean
-        +id
-        +fullName
-        +email
-        +role
-        +isActive
         +toJSON() object
     }
 
@@ -25,13 +20,6 @@ classDiagram
         -txDate : string
         -createdBy : number
         -createdAt : string
-        +id
-        +type
-        +amount
-        +description
-        +category
-        +txDate
-        +createdBy
         +toJSON() object
     }
 
@@ -43,6 +31,23 @@ classDiagram
         -checkOut : Date
         -notes : string
         +calculateTotalHours() number
+        +toJSON() object
+    }
+
+    class StockItem {
+        -id : number
+        -itemCode : string
+        -name : string
+        -category : string
+        -unit : string
+        -currentQty : number
+        -minQty : number
+        -unitCost : number
+        -supplier : string
+        -location : string
+        -isActive : boolean
+        -createdAt : string
+        +isLowStock() boolean
         +toJSON() object
     }
 
@@ -58,11 +63,23 @@ classDiagram
         +getSummary(filters) Promise
     }
 
+    class StockItemService {
+        -repository : IRepository
+        +listo(filters) Promise
+        +shto(data) Promise
+        +gjejSipasId(id) Promise
+        +perditeso(id, data) Promise
+        +fshi(id) Promise
+        +statistika(filters) Promise
+    }
+
     class IRepository {
         <<interface>>
         +getAll() Promise
         +getById(id) Promise
         +add(entity) Promise
+        +update(id, entity) Promise
+        +delete(id) Promise
         +save() Promise
     }
 
@@ -72,11 +89,28 @@ classDiagram
         +getAll() Promise
         +getById(id) Promise
         +add(entity) Promise
+        +update(id, entity) Promise
+        +delete(id) Promise
+        +save() Promise
+    }
+
+    class CsvStockItemRepository {
+        -filePath : string
+        -items : StockItem[]
+        +getAll() Promise
+        +getById(id) Promise
+        +add(entity) Promise
+        +update(id, entity) Promise
+        +delete(id) Promise
         +save() Promise
     }
 
     AuthService ..> User
     TransactionService ..> Transaction
+    StockItemService ..> StockItem
+    StockItemService --> IRepository
     CsvTransactionRepository ..|> IRepository
-    User "1" --> "*" Transaction : creates
-    User "1" --> "*" Attendance : has
+    CsvStockItemRepository ..|> IRepository
+    CsvTransactionRepository ..> Transaction
+    CsvStockItemRepository ..> StockItem
+```

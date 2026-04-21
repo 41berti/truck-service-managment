@@ -1,17 +1,13 @@
+const createHttpError = require("../utils/createHttpError");
+
 function authorizeRoles(...allowedRoles) {
   return function (req, res, next) {
     if (!req.user) {
-      return res.status(401).json({
-        ok: false,
-        message: "User information is missing",
-      });
+      return next(createHttpError("User information is missing", 401));
     }
 
     if (!allowedRoles.includes(req.user.role)) {
-      return res.status(403).json({
-        ok: false,
-        message: "Access denied",
-      });
+      return next(createHttpError("Access denied", 403));
     }
 
     next();

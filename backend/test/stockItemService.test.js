@@ -36,6 +36,34 @@ class InMemoryStockRepository {
     this.items.push(created);
     return new StockItem(created.toJSON());
   }
+
+  async update(id, entity) {
+    const index = this.items.findIndex((item) => item.id === Number(id));
+
+    if (index === -1) {
+      return null;
+    }
+
+    const current = this.items[index].toJSON();
+    const payload =
+      entity instanceof StockItem ? entity.toJSON() : new StockItem(entity).toJSON();
+
+    const updated = new StockItem({
+      ...current,
+      ...payload,
+      id: current.id,
+      created_at: current.created_at,
+    });
+
+    this.items[index] = updated;
+    return new StockItem(updated.toJSON());
+  }
+
+  async delete(id) {
+    const initialLength = this.items.length;
+    this.items = this.items.filter((item) => item.id !== Number(id));
+    return this.items.length !== initialLength;
+  }
 }
 
 function createService() {
@@ -172,6 +200,35 @@ test("shto rejects items with an empty name", async () => {
     (error) => {
       assert.equal(error.statusCode, 400);
       assert.match(error.message, /Emri i artikullit/);
+      return true;
+    }
+  );
+});
+
+test("perditeso updates an existing stock item and keeps its identity", async () => {
+  const service = createService();
+
+  const updated = await service.perditeso(2, {
+    current_qty: 8,
+    supplier: "Updated Supplier",
+  });
+
+  assert.equal(updated.id, 2);
+  assert.equal(updated.current_qty, 8);
+  assert.equal(updated.supplier, "Updated Supplier");
+  assert.equal(updated.name, "Air Filter");
+});
+
+test("fshi removes an existing stock item and it can no longer be found", async () => {
+  const service = createService();
+
+  const result = await service.fshi(3);
+  assert.equal(result.ok, true);
+
+  await assert.rejects(
+    () => service.gjejSipasId(3),
+    (error) => {
+      assert.equal(error.statusCode, 404);
       return true;
     }
   );
