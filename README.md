@@ -98,6 +98,62 @@ Production-style start:
 npm start
 ```
 
+## Live demo quick commands
+
+The strongest live demo flow is:
+
+```text
+Admin login -> stock list -> search/filter -> low-stock -> summary -> CRUD/validation
+```
+
+Before the demo:
+
+```powershell
+cd "C:\Users\alber\OneDrive\Desktop\truck-service-project\truck-service-managment\backend"
+npm install
+npm test
+npm run seed
+npm start
+```
+
+In a second terminal, log in as the seeded admin user:
+
+```powershell
+$login = curl.exe -s -X POST http://localhost:5000/auth/login `
+  -H "Content-Type: application/json" `
+  -d '{ "email": "admin@test.local", "password": "test1234" }' | ConvertFrom-Json
+
+$token = $login.token
+```
+
+Useful stock demo requests:
+
+```powershell
+curl.exe -s http://localhost:5000/stock -H "Authorization: Bearer $token"
+curl.exe -s "http://localhost:5000/stock?search=filter&sortBy=current_qty&sortOrder=desc" -H "Authorization: Bearer $token"
+curl.exe -s http://localhost:5000/stock/low-stock -H "Authorization: Bearer $token"
+curl.exe -s http://localhost:5000/stock/summary -H "Authorization: Bearer $token"
+curl.exe -s "http://localhost:5000/stock?sortBy=supplier_name" -H "Authorization: Bearer $token"
+curl.exe -s http://localhost:5000/stock/9999 -H "Authorization: Bearer $token"
+```
+
+Optional CRUD demo: create one temporary item, update it, then delete it before closing the demo.
+
+```powershell
+$created = curl.exe -s -X POST http://localhost:5000/stock `
+  -H "Authorization: Bearer $token" `
+  -H "Content-Type: application/json" `
+  -d '{ "item_code": "DEMO-FLT-001", "name": "Demo Fuel Filter", "category": "Engine", "unit": "pcs", "current_qty": 2, "min_qty": 5, "unit_cost": 19.9, "supplier": "Demo Supplier", "location": "Demo Shelf" }' | ConvertFrom-Json
+
+curl.exe -s -X PATCH "http://localhost:5000/stock/$($created.item.id)" `
+  -H "Authorization: Bearer $token" `
+  -H "Content-Type: application/json" `
+  -d '{ "current_qty": 8, "location": "Demo Shelf Updated" }'
+
+curl.exe -s -X DELETE "http://localhost:5000/stock/$($created.item.id)" `
+  -H "Authorization: Bearer $token"
+```
+
 ## Useful commands
 
 Run tests:
