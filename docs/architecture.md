@@ -1,145 +1,108 @@
 # Architecture
 
+Truck Service Management is now shaped as a full-stack web application with a stable backend foundation and a React frontend for the first real product flow.
+
+## Current product flow
+
+```text
+Admin login -> protected dashboard -> stock management
+```
+
+The browser app consumes the existing Express API. Stock is the first complete module because it already has CRUD, validation, summary data, and low-stock business value.
+
 ## Tech stack
 
 - Backend: Node.js + Express
-- Database: PostgreSQL
-- API style: REST
-- File storage demo: CSV
-- Authentication: JWT
+- Frontend: React + Vite + React Router
+- Database: PostgreSQL for users, finance, and the long-term domain schema
+- Current stock storage: CSV repository
+- Auth: JWT bearer tokens
 - Tests: Node built-in test runner
 
-## Current system shape
+## Backend layers
 
-The current repository is mainly a backend project. The planned frontend web layer is not implemented yet. The only working UI in the repository is the stock console UI in `backend/src/UI/stockConsoleUI.js`.
+### Routes
 
-## Layers
+Location: `backend/src/routes`
 
-### 1. UI Layer
-**Current location**
-- `backend/src/UI/stockConsoleUI.js`
-- `frontend/` exists as a placeholder, but it does not yet contain a real web UI
+Routes expose HTTP endpoints and delegate business rules to services.
 
-**Responsibility**
-- Read user input for the stock demo flow
-- Show output and validation errors
-- Call the service layer
+- `authRoutes` handles login and current-user lookup.
+- `adminRoutes` exposes the protected admin dashboard check.
+- `stockRoutes` exposes stock list, summary, low-stock, create, update, and delete.
+- `transactionRoutes` exposes finance endpoints that will receive a frontend in a later phase.
 
-### 2. Routes Layer
-**Location**
-- `backend/src/routes`
+### Services
 
-**Responsibility**
-- Expose HTTP endpoints
-- Keep controllers thin
-- Delegate business rules to services
-- Return JSON responses
+Location: `backend/src/Services`
 
-Current route modules:
-- `authRoutes`
-- `adminRoutes`
-- `transactionRoutes`
-- `stockRoutes`
+Services normalize input, enforce validation, and return domain-shaped data.
 
-### 3. Services Layer
-**Location**
-- `backend/src/Services`
-
-**Responsibility**
-- Hold business rules
-- Validate input
-- Normalize data
-- Decide when to return `400`, `404`, or `500` style errors
-
-Current service modules:
 - `AuthService`
-- `TransactionService`
 - `StockItemService`
+- `TransactionService`
 
-### 4. Models Layer
-**Location**
-- `backend/src/Models`
+### Models
 
-**Responsibility**
-- Represent domain entities
-- Encapsulate serialization with `toJSON()`
+Location: `backend/src/Models`
 
-Current models:
+Models wrap domain entities and define `toJSON()` output.
+
 - `User`
+- `StockItem`
 - `Transaction`
 - `Attendance`
-- `StockItem`
 
-### 5. Data Layer
-**Location**
-- `backend/src/Data`
-- `backend/src/db`
+### Data
 
-**Responsibility**
-- PostgreSQL access through `pg` for the main backend
-- CSV repository persistence for the stock assignment module
-- Keep storage concerns out of routes
+Location: `backend/src/Data` and `backend/src/db`
 
-Current persistence paths:
-- `backend/src/db/pool.js` for PostgreSQL
-- `backend/src/Data/repositories/CsvStockItemRepository.js`
-- `backend/src/Data/repositories/CsvTransactionRepository.js`
+PostgreSQL is configured through `backend/src/db/pool.js`. The stock module currently uses `CsvStockItemRepository` because the original assignment required file-backed repository CRUD.
 
-## Main design decisions
+The long-term product direction is to keep the repository boundary and move stock persistence to PostgreSQL later.
 
-### Why the stock module uses CSV
+### Middleware
 
-The project already has a PostgreSQL `stock_items` table in the schema, but the semester assignment also requires a repository-pattern example with file-based CRUD. Because of that, the stock module currently uses `CsvStockItemRepository` for the assignment flow.
+Location: `backend/src/middlewares`
 
-### Why routes are thin
+- `authenticateToken` verifies JWT bearer tokens.
+- `authorizeRoles` enforces role-based access.
+- `errorHandler` returns consistent API errors.
 
-Business rules such as stock validation, low-stock detection, transaction filter validation, and login checks belong in services. This keeps the HTTP layer smaller and easier to maintain.
+## Frontend structure
 
-### Why the app now uses centralized API error handling
+Location: `frontend/src`
 
-The project has multiple route files. Returning errors through a shared error handler keeps JSON error responses more consistent and reduces repeated `try/catch` logic inside routes.
+- `services/` centralizes API calls.
+- `context/` stores auth state and token handling.
+- `components/` contains layout and reusable UI pieces.
+- `pages/` contains route-level screens.
 
-### Why PostgreSQL still matters
+The frontend intentionally implements only the first complete product path. Finance, attendance, and appointments appear as planned modules so users understand the roadmap without being misled.
 
-The broader project domain is larger than the current implemented API. The schema already models attendance, clients, trucks, appointments, stock, and financial transactions, so PostgreSQL remains the main long-term data design for the system.
+## API response contract
 
-## Implemented flows
+Successful responses:
 
-### Authentication flow
-`Route -> AuthService -> PostgreSQL`
+```json
+{ "ok": true }
+```
 
-Implemented endpoints:
-- `POST /auth/login`
-- `GET /auth/me`
+Error responses:
 
-### Transaction flow
-`Route -> TransactionService -> PostgreSQL`
+```json
+{ "ok": false, "message": "..." }
+```
 
-Implemented endpoints:
-- `POST /transactions/income`
-- `POST /transactions/expense`
-- `GET /transactions`
-- `GET /transactions/summary`
-
-### Stock flow
-`Route -> StockItemService -> CsvStockItemRepository -> CSV file`
-
-Implemented endpoints:
-- `GET /stock`
-- `POST /stock`
-- `GET /stock/:id`
-- `PUT /stock/:id`
-- `PATCH /stock/:id`
-- `DELETE /stock/:id`
-- `GET /stock/low-stock`
-- `GET /stock/summary`
-
-Console/demo entry points:
-- `npm run stock:ui`
-- `npm run stock:demo`
+The frontend service layer reads this contract and displays backend validation messages directly.
 
 ## Current limitations
 
-- There is no real frontend web application yet.
-- Attendance, clients, trucks, appointments, and stock movements are present in the schema, but not yet implemented as full backend modules.
-- The stock module is strong for the assignment, but it still uses CSV instead of PostgreSQL.
+- Stock data is still stored in CSV.
+- Finance endpoints exist, but the frontend module is not built yet.
+- Attendance, clients, trucks, appointments, and stock movements exist in the schema but are not full backend/frontend flows yet.
+- Automated browser tests are not included yet.
+
+## Recommended next architecture step
+
+Move stock to PostgreSQL behind the existing repository/service boundary, then add route-level tests before building the next frontend module.

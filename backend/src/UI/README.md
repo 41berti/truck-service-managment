@@ -1,11 +1,5 @@
-# UI Layer
+# Legacy Console UI
 
-This folder contains the React presentation layer of the project.
+This folder contains the original console interface for the stock module.
 
-## Purpose
-- pages = route-level screens
-- components = reusable UI parts
-- future dashboard, login form, attendance screen, stock screen, and appointments calendar will live here
-
-## Why this exists
-The semester assignment requires a dedicated UI layer in the architecture.
+The product frontend now lives in `frontend/`. Keep this console UI as a useful development/demo fallback for the CSV-backed stock service, but do not treat it as the main user experience.

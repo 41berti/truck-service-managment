@@ -7,18 +7,37 @@ const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const stockRoutes = require("./routes/stockRoutes");
 const transactionRoutes = require("./routes/transactionRoutes");
+const attendanceRoutes = require("./routes/attendanceRoutes");
+const appointmentRoutes = require("./routes/appointmentRoutes");
 const asyncHandler = require("./utils/asyncHandler");
 const { notFoundHandler, errorHandler } = require("./middlewares/errorHandler");
 
 const app = express();
 
-app.use(cors());
+const allowedOrigins = String(process.env.CORS_ORIGIN || "*")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Origin is not allowed by CORS"));
+    },
+  })
+);
 app.use(express.json());
 
 app.use("/auth", authRoutes);
 app.use("/admin", adminRoutes);
 app.use("/stock", stockRoutes);
 app.use("/transactions", transactionRoutes);
+app.use("/attendance", attendanceRoutes);
+app.use("/appointments", appointmentRoutes);
 
 app.get("/health", (req, res) => {
   res.json({

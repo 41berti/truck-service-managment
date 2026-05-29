@@ -9,6 +9,7 @@
     "start": "node src/server.js",
     "repo:demo": "node src/scripts/repositoryDemo.js",
     "seed": "node src/scripts/seedUsers.js",
+    "stock:sync": "node src/scripts/syncStockToPostgres.js",
     "stock:demo": "node src/scripts/stockDemo.js",
     "stock:ui": "node src/UI/stockConsoleUI.js"
   },

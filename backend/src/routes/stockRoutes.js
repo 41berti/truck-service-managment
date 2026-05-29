@@ -1,12 +1,12 @@
 const express = require("express");
 const authenticateToken = require("../middlewares/authenticateToken");
 const authorizeRoles = require("../middlewares/authorizeRoles");
-const CsvStockItemRepository = require("../Data/repositories/CsvStockItemRepository");
+const PostgresStockItemRepository = require("../Data/repositories/PostgresStockItemRepository");
 const StockItemService = require("../Services/StockItemService");
 const asyncHandler = require("../utils/asyncHandler");
 
 const router = express.Router();
-const stockService = new StockItemService(new CsvStockItemRepository());
+const stockService = new StockItemService(new PostgresStockItemRepository());
 
 router.use(authenticateToken, authorizeRoles("ADMIN"));
 

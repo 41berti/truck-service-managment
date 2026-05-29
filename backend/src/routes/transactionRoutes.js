@@ -68,4 +68,26 @@ router.get(
   })
 );
 
+router.patch(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    const transaction = await transactionService.update(req.params.id, req.body);
+
+    return res.status(200).json({
+      ok: true,
+      message: "Transaction updated successfully",
+      transaction,
+    });
+  })
+);
+
+router.delete(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    const result = await transactionService.delete(req.params.id);
+
+    return res.status(200).json(result);
+  })
+);
+
 module.exports = router;

@@ -24,12 +24,13 @@ class TransactionService {
       const normalizedInput = this.#normalizeCreateInput(data);
       const numericAmount = Number(normalizedInput.amount);
       const normalizedUserId = this.#parseUserId(userId);
+      const txDate = this.#normalizeDateValue(normalizedInput.tx_date);
 
       if (
         normalizedInput.amount === undefined ||
         !normalizedInput.description ||
         !normalizedInput.category ||
-        !normalizedInput.tx_date
+        !txDate
       ) {
         throw createHttpError(
           "amount, description, category, and tx_date are required",
@@ -41,7 +42,7 @@ class TransactionService {
         throw createHttpError("Amount must be a number greater than 0", 400);
       }
 
-      if (!this.isValidDate(normalizedInput.tx_date)) {
+      if (!this.isValidDate(txDate)) {
         throw createHttpError(
           "tx_date must be a valid date in YYYY-MM-DD format",
           400
@@ -59,7 +60,7 @@ class TransactionService {
           numericAmount,
           normalizedInput.description,
           normalizedInput.category,
-          normalizedInput.tx_date,
+          txDate,
           normalizedUserId,
         ]
       );
@@ -156,6 +157,107 @@ class TransactionService {
     }
   }
 
+  async update(id, data) {
+    try {
+      const transactionId = this.#parsePositiveInteger(id, "id");
+      const currentResult = await pool.query(
+        `
+        SELECT id, type, amount, description, category, tx_date, created_by, created_at
+        FROM transactions
+        WHERE id = $1
+        `,
+        [transactionId]
+      );
+
+      if (currentResult.rows.length === 0) {
+        throw createHttpError("Transaction was not found", 404);
+      }
+
+      const current = currentResult.rows[0];
+      const normalizedInput = this.#normalizeCreateInput({
+        ...current,
+        ...data,
+        tx_date: data.tx_date ?? current.tx_date,
+      });
+      const normalizedType = this.#parseType(data.type ?? current.type, true);
+      const numericAmount = Number(normalizedInput.amount);
+      const txDate = this.#normalizeDateValue(normalizedInput.tx_date);
+
+      if (
+        normalizedInput.amount === undefined ||
+        !normalizedInput.description ||
+        !normalizedInput.category ||
+        !txDate
+      ) {
+        throw createHttpError(
+          "amount, description, category, and tx_date are required",
+          400
+        );
+      }
+
+      if (Number.isNaN(numericAmount) || numericAmount <= 0) {
+        throw createHttpError("Amount must be a number greater than 0", 400);
+      }
+
+      if (!this.isValidDate(txDate)) {
+        throw createHttpError(
+          "tx_date must be a valid date in YYYY-MM-DD format",
+          400
+        );
+      }
+
+      const result = await pool.query(
+        `
+        UPDATE transactions
+        SET type = $1,
+            amount = $2,
+            description = $3,
+            category = $4,
+            tx_date = $5
+        WHERE id = $6
+        RETURNING id, type, amount, description, category, tx_date, created_by, created_at
+        `,
+        [
+          normalizedType,
+          numericAmount,
+          normalizedInput.description,
+          normalizedInput.category,
+          txDate,
+          transactionId,
+        ]
+      );
+
+      return new Transaction(result.rows[0]).toJSON();
+    } catch (error) {
+      throw this.#wrapError(error, "Server error while updating transaction");
+    }
+  }
+
+  async delete(id) {
+    try {
+      const transactionId = this.#parsePositiveInteger(id, "id");
+      const result = await pool.query(
+        `
+        DELETE FROM transactions
+        WHERE id = $1
+        RETURNING id
+        `,
+        [transactionId]
+      );
+
+      if (result.rows.length === 0) {
+        throw createHttpError("Transaction was not found", 404);
+      }
+
+      return {
+        ok: true,
+        message: "Transaction deleted successfully",
+      };
+    } catch (error) {
+      throw this.#wrapError(error, "Server error while deleting transaction");
+    }
+  }
+
   #normalizeCreateInput(data = {}) {
     return {
       amount: data.amount,
@@ -163,6 +265,14 @@ class TransactionService {
       category: String(data.category ?? "").trim(),
       tx_date: String(data.tx_date ?? "").trim(),
     };
+  }
+
+  #normalizeDateValue(value) {
+    if (value instanceof Date) {
+      return value.toISOString().slice(0, 10);
+    }
+
+    return String(value ?? "").trim().slice(0, 10);
   }
 
   #normalizeFilters(filters = {}, options = {}) {
@@ -220,6 +330,16 @@ class TransactionService {
     }
 
     return normalizedUserId;
+  }
+
+  #parsePositiveInteger(value, fieldName) {
+    const normalized = Number(value);
+
+    if (!Number.isInteger(normalized) || normalized <= 0) {
+      throw createHttpError(`${fieldName} must be a positive integer`, 400);
+    }
+
+    return normalized;
   }
 
   #readOptionalText(value, fieldName) {

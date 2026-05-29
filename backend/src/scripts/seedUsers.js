@@ -9,7 +9,7 @@ const users = [
   {
     full_name: "Dev Admin",
     email: "admin@test.local",
-    password: "test1234", // changed the password for the 3 test users to one that is simple to remember.
+    password: "test1234",
     role: "ADMIN",
     is_active: true,
   },

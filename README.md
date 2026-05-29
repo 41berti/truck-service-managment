@@ -1,31 +1,62 @@
 # Truck Service Management
 
-Truck Service Management is a semester project for managing a truck service workshop. The current repository is mainly a backend-focused Node.js and Express application with a PostgreSQL schema and a CSV-based stock module used to demonstrate the repository pattern and CRUD flow.
+Truck Service Management is an early web application for organizing the daily work of a truck service business. The goal is to replace scattered paper-based workflows with one digital system for stock, attendance, finance, and appointments.
 
-## Current project status
+Phase 1 focuses on one complete, useful flow:
 
-Implemented in the current codebase:
-- JWT authentication and current-user lookup
-- Admin-only route protection
-- Financial transaction creation, listing, and summary endpoints
-- Full stock CRUD through `Route -> Service -> Repository`
-- Stock statistics and low-stock filtering
-- CSV repository demo and console UI for the stock module
-- PostgreSQL schema for users, attendance, transactions, clients, trucks, appointments, stock items, and stock movements
-- Unit tests for stock and transaction service behavior
+```text
+Admin login -> Dashboard -> Stock Management
+```
 
-Not yet implemented as full features:
-- A real web frontend
-- Full backend flows for attendance, clients, trucks, appointments, and stock movements
+The backend already provides authentication, role-based access control, stock CRUD, finance endpoints, validation, tests, and a PostgreSQL schema. The new frontend starts turning that foundation into a real browser product.
+
+## Business problem
+
+Small service businesses often track parts, employee attendance, daily income/expenses, and appointments with paper notes or separate files. That makes it harder to find information quickly, notice low stock early, prepare records, or scale the workflow beyond one person's memory.
+
+This project is being evolved into a practical internal tool for:
+
+- finding spare parts quickly
+- warning when stock is low
+- reducing manual stock mistakes
+- preparing future printable records
+- adding finance, attendance, and appointment workflows over time
+
+## Current status
+
+Completed in this phase:
+
+- Node.js + Express backend
+- JWT login and current-user endpoint
+- admin role protection
+- stock list, search, low-stock view, summary, create, update, and delete
+- centralized backend error responses using `{ "ok": false, "message": "..." }`
+- React + Vite frontend foundation
+- admin login screen
+- protected dashboard shell
+- stock management screen connected to the backend API
+- frontend API service layer
+- backend service tests
+
+Partially implemented:
+
+- finance backend endpoints exist, but no frontend module yet
+- PostgreSQL schema includes attendance, clients, trucks, appointments, stock items, and stock movements
+
+Planned:
+
+- attendance UI and backend flow
+- finance UI and reporting
+- appointment planning
+- printable records
+- migration of stock persistence from CSV demo storage to PostgreSQL
 
 ## Tech stack
 
-- Node.js
-- Express
-- PostgreSQL
-- JSON Web Tokens
-- CSV file storage for the stock assignment module
-- Node built-in test runner (`node:test`)
+- Backend: Node.js, Express, PostgreSQL, JWT
+- Frontend: React, Vite, React Router
+- Testing: Node built-in test runner
+- Current stock persistence: CSV repository used by the existing stock module
 
 ## Project structure
 
@@ -34,186 +65,181 @@ truck-service-managment/
 ├── backend/
 │   ├── src/
 │   │   ├── Data/
+│   │   ├── Models/
+│   │   ├── Services/
 │   │   ├── db/
 │   │   ├── middlewares/
-│   │   ├── Models/
 │   │   ├── routes/
-│   │   ├── Services/
-│   │   ├── UI/
 │   │   └── utils/
 │   └── test/
 ├── database/
-└── docs/
+├── docs/
+└── frontend/
+    └── src/
+        ├── components/
+        ├── context/
+        ├── pages/
+        └── services/
 ```
 
-## Setup
-
-### 1. Install dependencies
+## Backend setup
 
 ```powershell
-cd "C:\Users\alber\OneDrive\Desktop\truck-service-project\truck-service-managment\backend"
+cd backend
 npm install
+Copy-Item .env.example .env
 ```
 
-### 2. Create environment file
+Edit `backend/.env`:
 
-Use `backend/.env.example` as the template and create `backend/.env`.
+```env
+PORT=5000
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/truck_service_management
+JWT_SECRET=replace-with-a-strong-secret
+JWT_EXPIRES_IN=1d
+CORS_ORIGIN=http://localhost:5173
+```
 
-Required variables:
-- `PORT`
-- `DATABASE_URL`
-- `JWT_SECRET`
-- `JWT_EXPIRES_IN`
-
-### 3. Prepare the database
-
-Create a PostgreSQL database and run:
+Create the PostgreSQL database, then run the schema:
 
 ```powershell
-psql -d your_database_name -f "..\database\schema.sql"
+psql -d truck_service_management -f ..\database\schema.sql
 ```
 
-### 4. Seed test users
+Seed demo users:
 
 ```powershell
 npm run seed
 ```
 
-This creates or updates these test accounts:
-- `admin@test.local`
-- `mechanic@test.local`
-- `guard@test.local`
+Demo admin login:
 
-## Running the backend
+- Email: `admin@test.local`
+- Password: `test1234`
 
-Development mode:
+Run the backend:
 
 ```powershell
 npm run dev
 ```
 
-Production-style start:
+The API runs on `http://localhost:5000` by default.
+
+## Frontend setup
 
 ```powershell
-npm start
-```
-
-## Live demo quick commands
-
-The strongest live demo flow is:
-
-```text
-Admin login -> stock list -> search/filter -> low-stock -> summary -> CRUD/validation
-```
-
-Before the demo:
-
-```powershell
-cd "C:\Users\alber\OneDrive\Desktop\truck-service-project\truck-service-managment\backend"
+cd frontend
 npm install
-npm test
-npm run seed
-npm start
+Copy-Item .env.example .env
 ```
 
-In a second terminal, log in as the seeded admin user:
+Edit `frontend/.env` if your backend uses a different URL:
+
+```env
+VITE_API_BASE_URL=http://localhost:5000
+```
+
+Run the frontend:
 
 ```powershell
-$login = curl.exe -s -X POST http://localhost:5000/auth/login `
-  -H "Content-Type: application/json" `
-  -d '{ "email": "admin@test.local", "password": "test1234" }' | ConvertFrom-Json
-
-$token = $login.token
+npm run dev
 ```
 
-Useful stock demo requests:
-
-```powershell
-curl.exe -s http://localhost:5000/stock -H "Authorization: Bearer $token"
-curl.exe -s "http://localhost:5000/stock?search=filter&sortBy=current_qty&sortOrder=desc" -H "Authorization: Bearer $token"
-curl.exe -s http://localhost:5000/stock/low-stock -H "Authorization: Bearer $token"
-curl.exe -s http://localhost:5000/stock/summary -H "Authorization: Bearer $token"
-curl.exe -s "http://localhost:5000/stock?sortBy=supplier_name" -H "Authorization: Bearer $token"
-curl.exe -s http://localhost:5000/stock/9999 -H "Authorization: Bearer $token"
-```
-
-Optional CRUD demo: create one temporary item, update it, then delete it before closing the demo.
-
-```powershell
-$created = curl.exe -s -X POST http://localhost:5000/stock `
-  -H "Authorization: Bearer $token" `
-  -H "Content-Type: application/json" `
-  -d '{ "item_code": "DEMO-FLT-001", "name": "Demo Fuel Filter", "category": "Engine", "unit": "pcs", "current_qty": 2, "min_qty": 5, "unit_cost": 19.9, "supplier": "Demo Supplier", "location": "Demo Shelf" }' | ConvertFrom-Json
-
-curl.exe -s -X PATCH "http://localhost:5000/stock/$($created.item.id)" `
-  -H "Authorization: Bearer $token" `
-  -H "Content-Type: application/json" `
-  -d '{ "current_qty": 8, "location": "Demo Shelf Updated" }'
-
-curl.exe -s -X DELETE "http://localhost:5000/stock/$($created.item.id)" `
-  -H "Authorization: Bearer $token"
-```
+The app runs on `http://localhost:5173` by default.
 
 ## Useful commands
 
-Run tests:
+Backend tests:
 
 ```powershell
+cd backend
 npm test
 ```
 
-Run the stock repository demo:
+Backend development server:
 
 ```powershell
-npm run stock:demo
+cd backend
+npm run dev
 ```
 
-Open the stock console UI:
+Frontend development server:
 
 ```powershell
-npm run stock:ui
+cd frontend
+npm run dev
 ```
 
-Run the CSV repository demo:
+## API response style
 
-```powershell
-npm run repo:demo
+Successful responses use:
+
+```json
+{ "ok": true }
 ```
 
-## Main API routes
+Error responses use:
 
-Public routes:
+```json
+{ "ok": false, "message": "..." }
+```
+
+The frontend service layer expects this shape and displays backend validation messages directly to the user.
+
+## Main backend routes
+
+Public:
+
 - `GET /`
 - `GET /health`
 - `GET /health/db`
-- `GET /health/users`
 - `POST /auth/login`
 
-Protected routes:
-- `GET /auth/me`
+Protected:
 
-Admin routes:
+- `GET /auth/me`
 - `GET /admin/dashboard`
 
-Transaction routes:
-- `POST /transactions/income`
-- `POST /transactions/expense`
-- `GET /transactions`
-- `GET /transactions/summary`
+Stock:
 
-Stock routes:
 - `GET /stock`
+- `GET /stock/summary`
+- `GET /stock/low-stock`
 - `POST /stock`
 - `GET /stock/:id`
 - `PUT /stock/:id`
 - `PATCH /stock/:id`
 - `DELETE /stock/:id`
-- `GET /stock/low-stock`
-- `GET /stock/summary`
 
-## Notes for graders and reviewers
+Finance backend:
 
-- The stock module intentionally uses a CSV repository because the assignment requires a file-based repository with CRUD.
-- PostgreSQL is still the main database design for the broader system.
-- The frontend folder exists as a placeholder, but there is no real React frontend implementation in the current repository.
-- The clearest end-to-end implemented flow is the stock module.
+- `POST /transactions/income`
+- `POST /transactions/expense`
+- `GET /transactions`
+- `GET /transactions/summary`
+
+## Documentation
+
+Current product and technical docs:
+
+- `docs/architecture.md`
+- `docs/class-diagram.md`
+- `docs/improvement-report.md`
+
+Assignment-era planning, audit, and demo documents are still kept in `docs/` as historical reference. They are useful for project history, but the main product direction is now this README and the working frontend/backend flow.
+
+## Current limitations
+
+- Stock data still uses the CSV repository from the original assignment module.
+- The frontend only implements login, dashboard, and stock management.
+- Finance, attendance, and appointments are intentionally shown as planned modules.
+- There are service-level tests, but route-level and browser-level automated tests are not added yet.
+- Git was not available on PATH in the current local environment during this work.
+
+## Recommended next modules
+
+1. Move stock persistence from CSV to PostgreSQL while keeping the repository interface.
+2. Add route-level API tests for auth and stock.
+3. Build finance UI around the existing transaction endpoints.
+4. Implement attendance check-in/check-out with printable daily records.
+5. Add appointments with clients and trucks from the existing schema.
